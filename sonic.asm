@@ -5260,10 +5260,15 @@ Mars_SegaCycleNTSC:	equ (23011361*Mars_SegaZ80Cycles10+35795450/2)/35795450+1
 Mars_SegaCyclePAL:	equ (22801467*Mars_SegaZ80Cycles10+35468940/2)/35468940+1
 
 ; the SH2 program (mars/sh2: make), copied to the SH2s' SDRAM by the 32X boot ROM
-		align 4
+; (its size in the 32X header must be a multiple of 4: the boot ROM copies it a long
+; at a time - 1946 bytes made a real console hang at a black screen; padded to 16 here)
+		align 16
 Mars_SH2:	binclude "mars/sh2/sh2.bin"
+		align 16
 Mars_SH2_End:
-		align 4
+	if (Mars_SH2_End-Mars_SH2)&15
+		fatal "the SH2 program's size must be a multiple of 16"
+	endif
 	endif
 
 ; end of 'ROM'
