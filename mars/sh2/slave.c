@@ -23,8 +23,13 @@ static void pwm_put(u16 v)
 
 void slave_main(void)
 {
-    u16 last = read_twice(&MARS_COMM8);
-    u16 cycle = 1415;
+    u16 last, cycle = 1415;
+    /* Touch nothing until the 68000 has finished Sega's start-up code and set up the
+       32X ("S32G" in COMM12, Mars_Init68k): the start-up code clears and checks the
+       32X registers, the PWM's among them, while the SH2s already run. (Step 2's first
+       build set the PWM at once: black screen on a real console.) */
+    while (MARS_COMM12L != 0x53333247u) {}
+    last = read_twice(&MARS_COMM8);
     MARS_PWM_CYCLE = cycle;
     MARS_PWM_CTRL = 0x0105;                    /* left and right channels on, timer interval 1 */
     pwm_put((u16)(cycle >> 1));                /* start at the middle: the silent level */
