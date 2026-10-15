@@ -73,24 +73,101 @@ Mars_Init68k:
 		rts
 
 ; ---------------------------------------------------------------------------
-; Every vertical interrupt: the Mega Drive's backdrop colour (palette line 0
-; colour 0 on the Sega and continue screens, line 2 colour 0 elsewhere) to
-; COMM0, for the 32X's colour 0.
+; Every vertical interrupt, COMM0 for the master SH2:
+;   bits 0-11  the Mega Drive's backdrop colour (palette line 0 colour 0 on the
+;              Sega and continue screens, line 2 colour 0 elsewhere): 32X colour 0
+;   bits 12-14 the 32X sky: 0 none, 1 Green Hill, 3 Marble, 4 Star Light,
+;              5 Spring Yard, 6 Scrap Brain (zone + 1; Labyrinth has none) -
+;              only while a level or demo runs
+;              7: the credits screen (OpenJazz's plasma; COMM2 bits 8-12 = speed)
+;   bit 15     the palette is fading: no sky (the backdrop colour fades with it)
+; Outside levels and demos also COMM2 = 0 (no Tails).
 ; ---------------------------------------------------------------------------
 Mars_SendBG:
-		cmpi.b	#id_Level,(v_gamemode).w		; outside a level or demo: no Tails
+		tst.b	(v_mars_credits).w			; the credits screen: plasma (code 7), its speed in COMM2
+		beq.s	.nocredits
+		moveq	#0,d0
+		move.b	(v_mars_speed).w,d0
+		lsl.w	#8,d0
+		move.w	d0,(mars_comm2).l
+		move.w	#$7000,d1
+		bra.s	.colour
+.nocredits:
+		moveq	#0,d1					; sky code
+		cmpi.b	#id_Level,(v_gamemode).w
 		beq.s	.level
 		cmpi.b	#id_Demo,(v_gamemode).w
 		beq.s	.level
-		move.w	#0,(mars_comm2).l
-.level:		move.w	(v_palette+$40).w,d0
+		move.w	#0,(mars_comm2).l			; no Tails
+		bra.s	.colour
+.level:		move.b	(v_zone).w,d1
+		cmpi.b	#id_LZ,d1
+		bne.s	.sky
+		moveq	#-1,d1					; (Labyrinth: none)
+.sky:		addq.w	#1,d1
+		andi.w	#7,d1
+		ror.w	#4,d1					; -> bits 12-14
+		move.w	(v_palette+$40).w,d0
+		cmp.w	(v_palette_fading+$40).w,d0		; still fading in or out?
+		beq.s	.colour
+		ori.w	#$8000,d1
+.colour:	move.w	(v_palette+$40).w,d0
 		cmpi.b	#id_Sega,(v_gamemode).w
 		beq.s	.line0
 		cmpi.b	#id_Continue,(v_gamemode).w
 		bne.s	.send
 .line0:		move.w	(v_palette).w,d0
-.send:		move.w	d0,(mars_comm0).l
+.send:		andi.w	#$0EEE,d0
+		or.w	d1,d0
+		move.w	d0,(mars_comm0).l
 		rts
+
+; ---------------------------------------------------------------------------
+; Green Hill (after its art is loaded): the sky see-through, the clouds kept,
+; so the 32X sky shows behind them (tiles from mars/tools/ghz_sky.py; blocks
+; of the plain sky tile $F4, palette line 3, become empty)
+; ---------------------------------------------------------------------------
+Mars_GHZSky:
+		tst.b	(v_zone).w				; Green Hill?
+		bne.s	.done
+		lea	(v_16x16).w,a1
+		move.w	#$1800/2-1,d1
+.block:		move.w	(a1),d0
+		andi.w	#$67FF,d0				; palette line + tile
+		cmpi.w	#$60F4,d0
+		bne.s	.next
+		clr.w	(a1)
+.next:		addq.w	#2,a1
+		dbf	d1,.block
+		lea	Mars_GHZSkyTiles(pc),a1
+		move.w	(a1)+,d1
+		subq.w	#1,d1
+		bmi.s	.done
+		move	sr,-(sp)
+		move	#$2700,sr
+		lea	(vdp_control_port).l,a5
+		lea	(vdp_data_port).l,a6
+.tile:		moveq	#0,d0
+		move.w	(a1)+,d0				; tile number
+		lsl.l	#5,d0					; VRAM address -> VDP write command
+		move.l	d0,d2
+		andi.w	#$3FFF,d0
+		ori.w	#$4000,d0
+		swap	d0
+		lsr.l	#8,d2
+		lsr.l	#6,d2
+		andi.w	#3,d2
+		move.w	d2,d0
+		move.l	d0,(a5)
+		moveq	#8-1,d3
+.long:		move.l	(a1)+,(a6)
+		dbf	d3,.long
+		dbf	d1,.tile
+		move	(sp)+,sr
+.done:		rts
+Mars_GHZSkyTiles:
+		binclude "mars/ghz_sky.bin"
+		even
 
 ; ---------------------------------------------------------------------------
 ; The "SEGA" voice on the 32X's PWM (slave SH2), at the pitch it has on a Mega
@@ -134,3 +211,4 @@ Mars_PlaySega:
 .done:		rts
 
 		include	"mars/tails.asm"
+		include	"mars/menu.asm"

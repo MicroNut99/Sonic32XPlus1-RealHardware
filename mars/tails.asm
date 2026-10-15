@@ -12,13 +12,14 @@
 ;   COMM4 = Tails' frame << 8 | his tails' frame
 ;   COMM6 = (screen x + 64) << 8 | (screen y + 64)      (low 8 bits each)
 ;   COMM2 = $1000 on screen | $400 facing left | $4000 bit 8 of x+64 | $8000 bit 8 of y+64
+;           | bits 0-7 the background's y (Green Hill's 32X sky follows it)
 ;           (written last; 0 = not shown - Mars_SendBG writes 0 outside levels)
 ; ---------------------------------------------------------------------------
 
 mars_comm2:	equ $A15122
 mars_comm4:	equ $A15124
 
-; v_mars_tails ($40 bytes):
+; v_mars_tails ($40 bytes; $30-$3F: the menu, mars/menu.asm):
 tl_hist:	equ 0		; 16 x (Sonic's animation, status)
 tl_hpos:	equ $20		; next entry in tl_hist
 tl_body:	equ $21		; animation state of Tails (5 bytes): animation, last animation,
@@ -36,7 +37,7 @@ Mars_TailsInit:
 		move.b	(v_player+obStatus).w,(a1)+
 		dbf	d1,.hist
 		moveq	#0,d0
-		moveq	#($40-$20)/2-1,d1
+		moveq	#($30-$20)/2-1,d1			; (the rest of the block: the menu, mars/menu.asm)
 .clear:		move.w	d0,(a1)+
 		dbf	d1,.clear
 		lea	(v_mars_tails).w,a1
@@ -101,7 +102,8 @@ Mars_Tails:
 		addi.w	#64,d2
 		sub.w	(v_screenposy).w,d3
 		addi.w	#64,d3
-		moveq	#0,d1					; COMM2
+		moveq	#0,d1					; COMM2: bits 0-7 Green Hill's background y (32X sky)
+		move.b	(v_bgscrposy_vdp+1).w,d1
 		cmpi.w	#512,d2
 		bhs.s	.send					; (off screen; negative = very large)
 		cmpi.w	#512,d3

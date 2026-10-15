@@ -77,7 +77,7 @@ RomEndLoc:	dc.l EndOfRom-$900000-1				; end address of ROM
 		dc.l 0						; destination (SDRAM offset)
 		dc.l Mars_SH2_End-Mars_SH2			; size
 		dc.l $06000400					; master SH2 entry
-		dc.l $06000420					; slave SH2 entry
+		dc.l $06000440					; slave SH2 entry
 		dc.l $06000000					; master SH2 vector table (VBR)
 		dc.l $06000200					; slave SH2 vector table (VBR)
 	if * <> $3F0

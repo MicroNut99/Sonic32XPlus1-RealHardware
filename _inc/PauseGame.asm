@@ -41,6 +41,10 @@ PauseGame:
 
 	; Pause_ChkStart:
 	.checkUnpausing:
+	if Mars=1
+		tst.b	(v_mars_menu).w				; 32X: Mode + Z (the secret menu)?
+		bne.s	.unpauseMusic				; if yes, unpause (the level loop ends)
+	endif
 		btst	#bitStart,(v_jpadpress1).w		; is Start button pressed?
 		beq.s	.pauseLoop				; if not, keep game paused
 ; ---------------------------------------------------------------------------

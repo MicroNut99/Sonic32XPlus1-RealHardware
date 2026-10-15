@@ -1,6 +1,6 @@
 ! 32X SH2 start-up for Sonic 1 32X (Mars = 1).
 ! The 32X boot ROM copies this program to SDRAM $06000000 and starts the
-! master at $06000400 (VBR $06000000) and the slave at $06000420 (VBR $06000200).
+! master at $06000400 (VBR $06000000) and the slave at $06000440 (VBR $06000200).
 ! Interrupts stay masked (SR = $F0): both SH2s poll.
 
 	.section .vectors,"ax"
@@ -25,14 +25,24 @@ master_start:				! $06000400
 	mov	#0xF0,r0
 	extu.b	r0,r0
 	ldc	r0,sr			! interrupts masked
-	mov.l	m_main,r0
+	mov.l	m_bss,r1		! clear .bss (the slave has none)
+	mov.l	m_bss_end,r2
+	mov	#0,r0
+1:	cmp/hs	r2,r1
+	bt	2f
+	mov.l	r0,@r1
+	bra	1b
+	add	#4,r1
+2:	mov.l	m_main,r0
 	jmp	@r0
 	nop
 	.align	2
 m_sp:	.long	0x0603F800
 m_main:	.long	_master_main
-	.org	0x420
-slave_start:				! $06000420
+m_bss:	.long	__bss_start
+m_bss_end: .long	__bss_end
+	.org	0x440
+slave_start:				! $06000440
 	mov.l	s_sp,r15
 	mov	#0xF0,r0
 	extu.b	r0,r0

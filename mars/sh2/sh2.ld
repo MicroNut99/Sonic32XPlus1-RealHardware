@@ -6,6 +6,6 @@ SECTIONS
 {
   .text : { KEEP(*(.vectors)) *(.text*) *(.rodata*) } > sdram
   .data : { *(.data*) } > sdram
-  .bss  : { __bss_start = .; *(.bss*) *(COMMON) __bss_end = .; } > sdram
+  .bss  : { . = ALIGN(4); __bss_start = .; *(.bss*) *(COMMON) . = ALIGN(4); __bss_end = .; } > sdram
   /DISCARD/ : { *(.comment) }
 }

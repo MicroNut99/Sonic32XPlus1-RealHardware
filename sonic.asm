@@ -425,7 +425,7 @@ GameInit:
 		dbf	d6,.clearRAM				; loop until done
 
 	if Mars=1
-		bsr.w	Mars_Init68k				; set up the 32X screen, hand it to the SH2s
+		jsr	(Mars_Init68k).l				; set up the 32X screen, hand it to the SH2s
 	endif
 		bsr.w	VDPSetupGame				; initialize (proper) VDP registers
 		bsr.w	DACDriverLoad				; initialize Z80 DAC driver
@@ -669,7 +669,7 @@ id_VBlank_Ending:	equ $18					; Ending Sequence
 VBlank:
 		movem.l	d0-a6,-(sp)				; backup all registers except stack pointer (a7)
 	if Mars=1
-		bsr.w	Mars_SendBG				; the backdrop colour for the 32X's colour 0
+		jsr	(Mars_SendBG).l				; the backdrop colour for the 32X's colour 0
 	endif
 
 		tst.b	(v_vblank_routine).w			; was a VBlank routine set?
@@ -1107,6 +1107,9 @@ ReadJoypads:
 		lea	(v_jpadhold1).w,a0			; address where joypad states are written
 		lea	(port_1_data).l,a1			; first joypad port
 		bsr.s	.read					; do the first joypad
+	if Mars=1
+		jsr	(Mars_Read6).l				; 32X: Mode, X, Y, Z of a 6-button pad (the secret menu)
+	endif
 		addq.w	#2,a1					; do the second joypad (port_2_data)
 
 .read:
@@ -1885,7 +1888,7 @@ Sega_WaitPal:		; while light scanning effect is active
 		move.b	#id_VBlank_SegaPCM,(v_vblank_routine).w	; set VBlank routine to $14
 		bsr.w	WaitForVBlank				; wait for VBlank to play the sound (CPU is frozen here until sound finished playing)
 	else
-		bsr.w	Mars_PlaySega				; 32X: the "SEGA" voice on the PWM instead of the Z80
+		jsr	(Mars_PlaySega).l				; 32X: the "SEGA" voice on the PWM instead of the Z80
 	endif
 ; ---------------------------------------------------------------------------
 
@@ -2108,6 +2111,13 @@ Tit_MainLoop:
 ; ===========================================================================
 
 Tit_ChkRegion:
+	if Mars=1
+		tst.b	(v_mars_menu).w				; 32X: Mode + Z (or back from the credits): the menu
+		beq.s	.nomenu
+		clr.b	(v_mars_menu).w
+		bra.w	Tit_EnterLevelSelect
+.nomenu:
+	endif
 		tst.b	(v_megadrive).w				; check if the machine is US or Japanese
 		bpl.s	Tit_RegionJap				; if Japanese, branch
 		lea	(LevSelCode_US).l,a0			; load US code
@@ -2229,6 +2239,12 @@ LevelSelect:
 
 LevSel_SelectionMade:
 		move.w	(v_levselitem).w,d0			; get currently selected line
+	if Mars=1
+		cmpi.w	#levsel_credits_row,d0			; 32X: CREDITS?
+		bne.s	LevSel_NotCredits
+		jmp	(Mars_Credits).l			; (returns to the title screen / menu)
+LevSel_NotCredits:
+	endif
 		cmpi.w	#levsel_sndtest_row,d0			; have you selected item $14 (sound test)?
 		bne.s	LevSel_Level_SS				; if not, go to Level/SS subroutine
 		move.w	(v_levselsound).w,d0			; get currently selected sound test entry
@@ -2357,6 +2373,9 @@ LevSel_Ptrs:
 		dc.w id_FZ			; Final Zone
 		dc.w id_SS<<8			; Special Stage (dummy value)
 		dc.w $8000			; Sound Test
+	if Mars=1
+		dc.w $8000			; 32X: Credits (handled before the pointers are used)
+	endif
 LevSel_PtrsEnd:	even
 
 ; ===========================================================================
@@ -2534,9 +2553,13 @@ LevSel_NoMove:
 ; Subroutine to load level select text
 ; ---------------------------------------------------------------------------
 
+	if Mars=1
+levsel_line_count:	equ 22	; total number of lines (32X: + CREDITS)
+	else
 levsel_line_count:	equ 21	; total number of lines
+	endif
 levsel_line_length:	equ 24	; characters per line
-levsel_sndtest_row:	equ levsel_line_count-1  ; row index of the sound test
+levsel_sndtest_row:	equ 20	; row index of the sound test
 levsel_sndtest_col:	equ levsel_line_length-8 ; column offset for the sound test number
 
 levsel_start_row:	equ 4	; top tile offset for start position
@@ -2683,6 +2706,9 @@ LevelMenuText:
 		dc.b "FINAL ZONE              "
 		dc.b "SPECIAL STAGE           "
 		dc.b "SOUND SELECT            "
+	if Mars=1
+		dc.b "CREDITS                 "
+	endif
 		even
 
 	if MOMPASS=1
@@ -2885,6 +2911,9 @@ Level_SkipTtlCard:
 		bsr.w	DeformLayers				; initialize background deformation
 		bset	#2,(v_fg_scroll_flags).w		; draw an extra column at the left side of the screen during level start
 		bsr.w	LevelDataLoad				; load block mappings and palettes
+	if Mars=1
+		jsr	(Mars_GHZSky).l				; 32X: Green Hill's sky see-through (clouds kept)
+	endif
 		bsr.w	LoadTilesFromStart			; fully draw the foreground and background once before fade-in
 		jsr	(ConvertCollisionArray).l		; call a routine that immediately returns (this is a disabled development function)
 		bsr.w	ColIndexLoad				; set collision index for current zone
@@ -3012,7 +3041,7 @@ Level_ClrCardArt:
 Level_StartGame:
 		bclr	#7,(v_gamemode).w			; subtract $80 from mode to end pre-level stuff
 	if Mars=1
-		bsr.w	Mars_TailsInit				; 32X: Tails starts where Sonic is
+		jsr	(Mars_TailsInit).l				; 32X: Tails starts where Sonic is
 	endif
 		; enter main loop...
 
@@ -3052,7 +3081,7 @@ Level_DoScroll:
 
 Level_SkipScroll:
 	if Mars=1
-		bsr.w	Mars_Tails				; 32X: Tails follows Sonic (drawn by the SH2)
+		jsr	(Mars_Tails).l				; 32X: Tails follows Sonic (drawn by the SH2)
 	endif
 		jsr	(BuildSprites).l			; build sprite table
 		jsr	(ObjPosLoad).l				; run the object manager to load level objects
