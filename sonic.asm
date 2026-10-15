@@ -3011,6 +3011,9 @@ Level_ClrCardArt:
 
 Level_StartGame:
 		bclr	#7,(v_gamemode).w			; subtract $80 from mode to end pre-level stuff
+	if Mars=1
+		bsr.w	Mars_TailsInit				; 32X: Tails starts where Sonic is
+	endif
 		; enter main loop...
 
 ; ---------------------------------------------------------------------------
@@ -3048,6 +3051,9 @@ Level_DoScroll:
 		bsr.w	DeformLayers				; scroll planes and do background deformation
 
 Level_SkipScroll:
+	if Mars=1
+		bsr.w	Mars_Tails				; 32X: Tails follows Sonic (drawn by the SH2)
+	endif
 		jsr	(BuildSprites).l			; build sprite table
 		jsr	(ObjPosLoad).l				; run the object manager to load level objects
 		bsr.w	PaletteCycle				; run palette cycles

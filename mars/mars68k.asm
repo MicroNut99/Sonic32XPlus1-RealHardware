@@ -78,7 +78,12 @@ Mars_Init68k:
 ; COMM0, for the 32X's colour 0.
 ; ---------------------------------------------------------------------------
 Mars_SendBG:
-		move.w	(v_palette+$40).w,d0
+		cmpi.b	#id_Level,(v_gamemode).w		; outside a level or demo: no Tails
+		beq.s	.level
+		cmpi.b	#id_Demo,(v_gamemode).w
+		beq.s	.level
+		move.w	#0,(mars_comm2).l
+.level:		move.w	(v_palette+$40).w,d0
 		cmpi.b	#id_Sega,(v_gamemode).w
 		beq.s	.line0
 		cmpi.b	#id_Continue,(v_gamemode).w
@@ -95,10 +100,10 @@ Mars_SendBG:
 ; cycles, 16,030 Hz NTSC. The PWM cycle register is the 32X clock divided by
 ; that rate, plus 1 (the PWM's period is cycle - 1 clocks).
 ; COMM12-14 = ROM offset of Mars_SegaTable, COMM10 = cycle, COMM8 = request
-; number (+1 = play); the slave writes the number to COMM6 when done.
+; number (+1 = play); the slave sets COMM10 to 0 when done.
 ; Waits (Sega screen's vertical interrupts going on) until then, 3 s at most.
 ; ---------------------------------------------------------------------------
-mars_comm6:	equ $A15126
+mars_comm6:	equ $A15126	; (Tails' position for the master)
 mars_comm8:	equ $A15128
 mars_comm10:	equ $A1512A
 ; (Mars_SegaCycleNTSC / Mars_SegaCyclePAL: at the end of sonic.asm, after the sound driver)
@@ -120,7 +125,12 @@ Mars_PlaySega:
 		move.w	#3*60-1,d2
 .wait:		move.b	#id_VBlank_Sega,(v_vblank_routine).w
 		bsr.w	WaitForVBlank
-		cmp.w	(mars_comm6).l,d1			; finished?
+		move.w	(mars_comm10).l,d0			; finished? (0 twice: the slave may be writing it)
+		bne.s	.next
+		tst.w	(mars_comm10).l
 		beq.s	.done
+.next:
 		dbf	d2,.wait
 .done:		rts
+
+		include	"mars/tails.asm"

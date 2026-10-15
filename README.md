@@ -17,8 +17,8 @@ time, each step tested on a real Genesis + 32X.
 | Step | What | Status |
 |---|---|---|
 | 1 | 32X ROM: 32X header and start-up; the 68000 sets up the 32X screen and hands it to the SH2s (as Virtua Racing Deluxe does); the master SH2 draws a white test box (top right) and sets 32X colour 0 to the Genesis backdrop colour | works on a real Genesis + 32X |
-| 2 | The "SEGA" voice on the 32X's PWM (slave SH2), at its Mega Drive pitch: PWM cycle = 32X clock / the rate the Z80 plays it at (from sega.wav's rate and the Z80 loop timing), NTSC and PAL; music and effects stay on the Z80 / FM as in the original. The slave waits for the 68000's "S32G" before touching the PWM (first build: black screen on hardware) | built, to be tested on hardware |
-| 3 | Tails | |
+| 2 | The "SEGA" voice on the 32X's PWM (slave SH2), at its Mega Drive pitch: PWM cycle = 32X clock / the rate the Z80 plays it at (from sega.wav's rate and the Z80 loop timing), NTSC and PAL; music and effects stay on the Z80 / FM as in the original. The slave waits for the 68000's "S32G" before touching the PWM (first build: black screen on hardware) | works on a real Genesis + 32X |
+| 3 | Tails, drawn by the master SH2 in front of the Genesis picture; he follows Sonic's path 16 frames behind with Sonic 2's animations (mars/tails.asm; pictures from Sonic 2's art, mars/tools/tails_frames.py) | built, to be tested on hardware |
 | 4 | 32X skies | |
 
 ## How the 32X version is put together
@@ -28,7 +28,10 @@ time, each step tested on a real Genesis + 32X.
 - From $800 on, the 68000 code runs at $900000 + ROM offset (the 32X shows the first 1 MB of the
   cartridge there). The Z80 driver keeps its own addresses.
 - `mars/mars68k.asm`: waiting for the SH2s, setting up the 32X screen, sending the backdrop colour.
-- `mars/sh2`: the SH2 program (master and slave).
+- `mars/sh2`: the SH2 program (master: picture, slave: PWM sound). Its size must be a multiple
+  of 4 for the 32X boot ROM (checked at build time, padded to 16).
+- COMM registers: COMM0 backdrop colour, COMM2-6 Tails (68000 -> master); COMM8 sound request,
+  COMM10 PWM cycle / 0 = done, COMM12-14 "S32G" at start, then the sound's table (68000 <-> slave).
 
 ---
 

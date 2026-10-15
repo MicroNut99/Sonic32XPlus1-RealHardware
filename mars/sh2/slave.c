@@ -1,8 +1,8 @@
 /* Slave SH2, step 2: plays the "SEGA" voice on the 32X's PWM.
    The 68000 asks by changing COMM8 (a request number), with COMM12-14 = the ROM offset of
    a small table (ROM offset of the sample, its size in bytes) and the PWM cycle for the
-   Mega Drive pitch in COMM10 (worked out at build time, see mars/mars68k.asm). The slave reports
-   the request number in COMM6 when the voice has finished.
+   Mega Drive pitch in COMM10 (worked out at build time, see mars/mars68k.asm). The slave sets
+   COMM10 to 0 when the voice has finished (COMM0-6 carry the picture for the master).
    The PWM takes one value per cycle from a 3-deep FIFO: writing whenever the FIFO
    has room plays the samples at exactly that rate. */
 #include "mars.h"
@@ -53,6 +53,6 @@ void slave_main(void)
                 pwm_put((u16)(mid + (((int)p[i] - 128) * mid) / 512));   /* range: about the Mega Drive's loudness */
         }
         pwm_put((u16)(cycle >> 1));
-        MARS_COMM6 = req;
+        MARS_COMM10 = 0;
     }
 }

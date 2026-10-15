@@ -112,7 +112,7 @@ v_tryagain:		equ	v_objspace+object_size*3	; object variable space for the "TRY A
 v_eggmanchaos:		equ	v_objspace+object_size*32	; object variable space for the emeralds juggled by Eggman ($180 bytes)
 
 v_snddriver_ram:	SMPS_RAM				; sound driver state
-			ds.b	$40				; unused
+v_mars_tails:		ds.b	$40				; unused (32X: Tails, mars/tails.asm)
 
 v_gamemode:		ds.b	1				; game mode (00=Sega; 04=Title; 08=Demo; 0C=Level; 10=SS; 14=Cont; 18=End; 1C=Credit; +8C=PreLevel)
 			ds.b	1				; unused
