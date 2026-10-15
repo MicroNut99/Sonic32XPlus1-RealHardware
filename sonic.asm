@@ -1878,12 +1878,14 @@ Sega_WaitPal:		; while light scanning effect is active
 		bne.s	Sega_WaitPal				; loop until it's finished
 ; ---------------------------------------------------------------------------
 
-	if Mars=0	; (32X: no "SEGA" voice until the sound step - the Z80 would read it from the 32X ROM area)
+	if Mars=0
 		; while "SEGA" sound is playing
 		move.b	#sfx_Sega,d0				; set "SEGA" sound
 		bsr.w	QueueSound2				; queue it
 		move.b	#id_VBlank_SegaPCM,(v_vblank_routine).w	; set VBlank routine to $14
 		bsr.w	WaitForVBlank				; wait for VBlank to play the sound (CPU is frozen here until sound finished playing)
+	else
+		bsr.w	Mars_PlaySega				; 32X: the "SEGA" voice on the PWM instead of the Z80
 	endif
 ; ---------------------------------------------------------------------------
 
@@ -5252,6 +5254,11 @@ SoundDriver:	include "s1.sounddriver.asm"
 ; ---------------------------------------------------------------------------
 
 	if Mars=1
+; the "SEGA" voice's PWM cycle at its Mega Drive pitch (see Mars_PlaySega)
+Mars_SegaZ80Cycles10:	equ (90+13*(pcmLoopCounter(SegaPCM.sample_rate)-1))*10+33	; in 1/10 Z80 cycles: the loop + 3.3 for the Z80's read through the 68000 bus
+Mars_SegaCycleNTSC:	equ (23011361*Mars_SegaZ80Cycles10+35795450/2)/35795450+1
+Mars_SegaCyclePAL:	equ (22801467*Mars_SegaZ80Cycles10+35468940/2)/35468940+1
+
 ; the SH2 program (mars/sh2: make), copied to the SH2s' SDRAM by the 32X boot ROM
 		align 4
 Mars_SH2:	binclude "mars/sh2/sh2.bin"

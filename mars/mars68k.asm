@@ -86,3 +86,41 @@ Mars_SendBG:
 .line0:		move.w	(v_palette).w,d0
 .send:		move.w	d0,(mars_comm0).l
 		rts
+
+; ---------------------------------------------------------------------------
+; The "SEGA" voice on the 32X's PWM (slave SH2), at the pitch it has on a Mega
+; Drive: there the Z80 plays one sample every 90 + 13*(loop count-1) Z80 cycles
+; (pcmLoopCounter for the sample's rate from sega.wav, 16,500 Hz: 220 cycles),
+; plus about 3.3 cycles for reading each byte through the 68000 bus: 223.3 Z80
+; cycles, 16,030 Hz NTSC. The PWM cycle register is the 32X clock divided by
+; that rate, plus 1 (the PWM's period is cycle - 1 clocks).
+; COMM12-14 = ROM offset of Mars_SegaTable, COMM10 = cycle, COMM8 = request
+; number (+1 = play); the slave writes the number to COMM6 when done.
+; Waits (Sega screen's vertical interrupts going on) until then, 3 s at most.
+; ---------------------------------------------------------------------------
+mars_comm6:	equ $A15126
+mars_comm8:	equ $A15128
+mars_comm10:	equ $A1512A
+; (Mars_SegaCycleNTSC / Mars_SegaCyclePAL: at the end of sonic.asm, after the sound driver)
+
+Mars_SegaTable:
+		dc.l SegaPCM-$900000				; ROM offset of the sample (8-bit unsigned)
+		dc.l SegaPCM.size				; its size in bytes
+
+Mars_PlaySega:
+		move.l	#Mars_SegaTable-$900000,(mars_comm12).l
+		move.w	#Mars_SegaCycleNTSC,d0
+		btst	#6,(v_megadrive).w			; PAL console?
+		beq.s	.ntsc
+		move.w	#Mars_SegaCyclePAL,d0
+.ntsc:		move.w	d0,(mars_comm10).l
+		move.w	(mars_comm8).l,d1
+		addq.w	#1,d1
+		move.w	d1,(mars_comm8).l			; play
+		move.w	#3*60-1,d2
+.wait:		move.b	#id_VBlank_Sega,(v_vblank_routine).w
+		bsr.w	WaitForVBlank
+		cmp.w	(mars_comm6).l,d1			; finished?
+		beq.s	.done
+		dbf	d2,.wait
+.done:		rts

@@ -16,8 +16,8 @@ time, each step tested on a real Genesis + 32X.
 
 | Step | What | Status |
 |---|---|---|
-| 1 | 32X ROM: 32X header and start-up; the 68000 sets up the 32X screen and hands it to the SH2s (as Virtua Racing Deluxe does); the master SH2 draws a white test box (top right) and sets 32X colour 0 to the Genesis backdrop colour | built, to be tested on hardware |
-| 2 | Sound on the 32X ("SEGA" voice, PWM) | |
+| 1 | 32X ROM: 32X header and start-up; the 68000 sets up the 32X screen and hands it to the SH2s (as Virtua Racing Deluxe does); the master SH2 draws a white test box (top right) and sets 32X colour 0 to the Genesis backdrop colour | works on a real Genesis + 32X |
+| 2 | The "SEGA" voice on the 32X's PWM (slave SH2), at its Mega Drive pitch: PWM cycle = 32X clock / the rate the Z80 plays it at (from sega.wav's rate and the Z80 loop timing), NTSC and PAL; music and effects stay on the Z80 / FM as in the original | built, to be tested on hardware |
 | 3 | Tails | |
 | 4 | 32X skies | |
 
@@ -29,7 +29,6 @@ time, each step tested on a real Genesis + 32X.
   cartridge there). The Z80 driver keeps its own addresses.
 - `mars/mars68k.asm`: waiting for the SH2s, setting up the 32X screen, sending the backdrop colour.
 - `mars/sh2`: the SH2 program (master and slave).
-- Step 1 leaves out the "SEGA" voice (the Z80 reads it from ROM; that is done in step 2).
 
 ---
 
