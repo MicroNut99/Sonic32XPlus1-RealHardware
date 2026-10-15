@@ -81,7 +81,8 @@ The Genesis (68000 + VDP) still runs and draws Sonic 1. The 32X adds a **second 
 - **Skies in 15-bit color.** 64-shade gradients, *behind* the Genesis picture, where Sonic 1 shows
   its backdrop color. Green Hill: sky and water; its sky is made see-through at the level start
   (`mars/tools/ghz_sky.py`, `Mars_GHZSky`), **the Genesis keeps drawing the clouds in front**, and
-  the gradient follows the background's scrolling. Marble, Star Light, Spring Yard and Scrap Brain:
+  the gradient follows the background's scrolling. The **title screen** gets the same Green Hill sky
+  and water behind its clouds (its blocks and tiles patched as it loads them). Marble, Star Light, Spring Yard and Scrap Brain:
   a gradient per zone (deep blue to lilac, night to violet, purple to orange twilight, smog brown to
   amber). While Sonic 1 fades its palette, the backdrop color is shown instead, so it fades too.
   Labyrinth has no sky.
@@ -132,7 +133,8 @@ Sub-CPU program `cd.s`), as in the earlier Sonic32 build: `mars/cd.asm`, `mars/c
 Sega CD BIOS at `$400000`, unpack it into the Sub-CPU's memory (with Sonic 1's own Kosinski decoder),
 copy the Sub-CPU program to `$6000`, start it, raise its level 2 interrupt every frame; commands D
 (disc info: track count), P (play), S (stop), Z (pause / go on). It is started the first time the
-credits screen opens.
+credits screen opens. The BIOS name check reads byte by byte: its offset (`$6D`) is odd, and the
+earlier build's long read there stopped a real 68000 with an address error.
 
 ---
 

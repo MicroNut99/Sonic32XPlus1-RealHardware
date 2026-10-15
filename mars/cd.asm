@@ -17,17 +17,34 @@ CD_Init:
 		clr.b	(CD_Ok).w
 		clr.b	(CD_Lvl2).w
 		lea	($415800).l,a0		; where the Sega CD BIOS can be (by model)
-		cmpi.l	#'SEGA',$6D(a0)
+		move.l	#'SEGA',d2
+		bsr.s	CD_IdIs
 		beq.s	CD_BiosFound
 		lea	($416000).l,a0
-		cmpi.l	#'SEGA',$6D(a0)
+		bsr.s	CD_IdIs
 		beq.s	CD_BiosFound
-		cmpi.l	#'WOND',$6D(a0)		; WonderMega / X'Eye
+		move.l	#'WOND',d2		; WonderMega / X'Eye
+		bsr.s	CD_IdIs
 		beq.s	CD_BiosFound
 		lea	($41AD00).l,a0		; LaserActive
-		cmpi.l	#'SEGA',$6D(a0)
+		move.l	#'SEGA',d2
+		bsr.s	CD_IdIs
 		beq.s	CD_BiosFound
 		move.b	#1,(CD_State).w		; no Sega CD
+		rts
+
+; is the BIOS name at $6D(a0) the 4 letters in d2? (Z set if so) - byte by byte: $6D is
+; odd, and a word / long read there is an address error on a real 68000 (the earlier
+; build's cmpi.l #'SEGA',$6D(a0) stopped the console with ADDRESS ERROR at $41586D)
+CD_IdIs:
+		move.b	$6D(a0),d1
+		lsl.l	#8,d1
+		move.b	$6E(a0),d1
+		lsl.l	#8,d1
+		move.b	$6F(a0),d1
+		lsl.l	#8,d1
+		move.b	$70(a0),d1
+		cmp.l	d2,d1
 		rts
 CD_BiosFound:
 		move.l	a0,-(sp)

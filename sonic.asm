@@ -1917,6 +1917,9 @@ Sega_GotoTitle:		; transition to title screen
 
 ; TitleScreen:
 GM_Title:		; fading out from previous game mode
+	if Mars=1
+		clr.b	(v_mars_titlesky).w			; 32X: no title sky until it is set up again
+	endif
 		move.b	#bgm_Stop,d0				; set stop music command
 		bsr.w	QueueSound2				; stop music
 		bsr.w	ClearPLC				; stop any potential in-progress PLC
@@ -2021,6 +2024,9 @@ Tit_LoadText:
 		lea	(v_bgscreenposx).w,a3			; get current background X position
 		lea	(v_lvllayout_bg).w,a4			; get location in level layout RAM where background is stored
 		move.w	#$4000+(vram_bg-vram_fg),d2		; =$6000 (VRAM write command $4000 + nametable start address relative to vram_fg)
+	if Mars=1
+		jsr	(Mars_GHZSkyBlocks).l			; 32X: Green Hill's sky see-through (the blocks)
+	endif
 		bsr.w	DrawChunks				; draw initial background layer
 
 		lea	(v_ram_start).l,a1			; set start of RAM to be used as decompression buffer (this overwrites unused chunk RAM)
@@ -2038,6 +2044,10 @@ Tit_LoadText:
 		locVRAM	ArtTile_Level*tile_size			; set target VRAM location for level patterns
 		lea	(Nem_GHZ_1st).l,a0			; load first half of GHZ patterns
 		bsr.w	NemDec					; decompress Nemesis-compressed patterns directly to VRAM
+	if Mars=1
+		jsr	(Mars_GHZSkyTiles).l			; 32X: ... and the tiles: the 32X sky behind the clouds
+		move.b	#1,(v_mars_titlesky).w
+	endif
 
 		moveq	#palid_Title,d0				; load title screen palette...
 		bsr.w	PalLoad_Fade				; ...to fade-in buffer
@@ -2202,6 +2212,9 @@ Tit_ChkLevSel:
 ; ---------------------------------------------------------------------------
 
 Tit_EnterLevelSelect:
+	if Mars=1
+		clr.b	(v_mars_titlesky).w			; 32X: no sky behind the menu
+	endif
 	if FixBugs
 		; Fix the level selects graphics bug
 		; https://info.sonicretro.org/SCHG_How-to:Fix_the_Level_Select_graphics_bug

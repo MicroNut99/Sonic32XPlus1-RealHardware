@@ -15,6 +15,7 @@ v_mars_crhide:	equ v_mars_tails+$34	; credits text hidden
 v_mars_speed:	equ v_mars_tails+$35	; plasma speed 1-16 (8 = normal)
 v_mars_roll:	equ v_mars_tails+$36	; the credits' roll, 1/256 pixels (word)
 
+v_mars_titlesky:	equ v_mars_tails+$3F	; 1 = the title screen shows (32X: Green Hill's sky behind it)
 levsel_credits_row:	equ 21		; the level select's CREDITS line
 
 ; ---------------------------------------------------------------------------

@@ -76,7 +76,7 @@ Mars_Init68k:
 ; Every vertical interrupt, COMM0 for the master SH2:
 ;   bits 0-11  the Mega Drive's backdrop colour (palette line 0 colour 0 on the
 ;              Sega and continue screens, line 2 colour 0 elsewhere): 32X colour 0
-;   bits 12-14 the 32X sky: 0 none, 1 Green Hill, 3 Marble, 4 Star Light,
+;   bits 12-14 the 32X sky: 0 none, 1 Green Hill (also the title screen), 3 Marble, 4 Star Light,
 ;              5 Spring Yard, 6 Scrap Brain (zone + 1; Labyrinth has none) -
 ;              only while a level or demo runs
 ;              7: the credits screen (OpenJazz's plasma; COMM2 bits 8-12 = speed)
@@ -101,7 +101,18 @@ Mars_SendBG:
 		beq.s	.level
 		cmpi.b	#id_Demo,(v_gamemode).w
 		beq.s	.level
-		move.w	#0,(mars_comm2).l			; no Tails
+		moveq	#0,d0					; no Tails
+		tst.b	(v_mars_titlesky).w			; the title screen: Green Hill's sky (code 1)
+		beq.s	.notitle
+		cmpi.b	#id_Title,(v_gamemode).w
+		bne.s	.notitle
+		move.b	(v_bgscrposy_vdp+1).w,d0		; its background's y
+		move.w	#$1000,d1
+		move.w	(v_palette+$40).w,d2
+		cmp.w	(v_palette_fading+$40).w,d2		; fading?
+		beq.s	.notitle
+		ori.w	#$8000,d1
+.notitle:	move.w	d0,(mars_comm2).l
 		bra.s	.colour
 .level:		move.b	(v_zone).w,d1
 		cmpi.b	#id_LZ,d1
@@ -132,7 +143,13 @@ Mars_SendBG:
 ; ---------------------------------------------------------------------------
 Mars_GHZSky:
 		tst.b	(v_zone).w				; Green Hill?
-		bne.s	.done
+		bne.s	Mars_GHZSkyTiles_done
+		bsr.s	Mars_GHZSkyBlocks
+		bra.s	Mars_GHZSkyTiles
+
+; (the title screen calls the two halves itself: the blocks before it draws its
+;  background, the tiles after it has loaded Green Hill's art)
+Mars_GHZSkyBlocks:
 		lea	(v_16x16).w,a1
 		move.w	#$1800/2-1,d1
 .block:		move.w	(a1),d0
@@ -142,10 +159,13 @@ Mars_GHZSky:
 		clr.w	(a1)
 .next:		addq.w	#2,a1
 		dbf	d1,.block
-		lea	Mars_GHZSkyTiles(pc),a1
+		rts
+
+Mars_GHZSkyTiles:
+		lea	Mars_GHZSkyData(pc),a1
 		move.w	(a1)+,d1
 		subq.w	#1,d1
-		bmi.s	.done
+		bmi.s	Mars_GHZSkyTiles_done
 		move	sr,-(sp)
 		move	#$2700,sr
 		lea	(vdp_control_port).l,a5
@@ -167,8 +187,9 @@ Mars_GHZSky:
 		dbf	d3,.long
 		dbf	d1,.tile
 		move	(sp)+,sr
-.done:		rts
-Mars_GHZSkyTiles:
+Mars_GHZSkyTiles_done:
+		rts
+Mars_GHZSkyData:
 		binclude "mars/ghz_sky.bin"
 		even
 
