@@ -1,3 +1,38 @@
+# Sonic 1 32X (real hardware)
+
+Sonic the Hedgehog (REV01) rebuilt as a Sega 32X ROM from the s1disasm source, one step at a
+time, each step tested on a real Genesis + 32X.
+
+## Build
+
+1. `make -C mars/sh2` (needs the SH2 GCC toolchain, `sh-elf-*`; `sh2.bin` is committed, so this is
+   only needed after changing `mars/sh2`)
+2. `lua build.lua`
+3. Output: `s1built.32x` (the same bytes as `s1built.bin`)
+
+`Mars = 0` in `sonic.asm` builds the original Mega Drive ROM.
+
+## Steps
+
+| Step | What | Status |
+|---|---|---|
+| 1 | 32X ROM: 32X header and start-up; the 68000 sets up the 32X screen and hands it to the SH2s (as Virtua Racing Deluxe does); the master SH2 draws a white test box (top right) and sets 32X colour 0 to the Genesis backdrop colour | built, to be tested on hardware |
+| 2 | Sound on the 32X ("SEGA" voice, PWM) | |
+| 3 | Tails | |
+| 4 | 32X skies | |
+
+## How the 32X version is put together
+
+- `mars/header.asm` replaces the Mega Drive vectors and header: 32X header, jump table for the
+  68000's interrupts at $200, the SH2 program's location at $3C0, Sega's start-up code at $3F0.
+- From $800 on, the 68000 code runs at $900000 + ROM offset (the 32X shows the first 1 MB of the
+  cartridge there). The Z80 driver keeps its own addresses.
+- `mars/mars68k.asm`: waiting for the SH2s, setting up the 32X screen, sending the backdrop colour.
+- `mars/sh2`: the SH2 program (master and slave).
+- Step 1 leaves out the "SEGA" voice (the Z80 reads it from ROM; that is done in step 2).
+
+---
+
 # Sonic the Hedgehog (16-bit) Disassembly
 
 For an overview of the folder structure, [refer to this page](https://info.sonicretro.org/SCHG_How-to:Disassembly_Folder_Structure#Sonic_1).

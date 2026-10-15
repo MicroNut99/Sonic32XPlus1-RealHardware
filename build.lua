@@ -30,5 +30,15 @@ common.build_rom_and_handle_failure("sonic", "s1built", "", "-p=FF -z=0," .. com
 -- Correct the ROM's header with a proper checksum and end-of-ROM value.
 common.fix_header("s1built.bin")
 
+-- 32X: the same ROM as s1built.32x (emulators and flash carts pick the 32X by the extension).
+do
+	local input = io.open("s1built.bin", "rb")
+	local data = input:read("a")
+	input:close()
+	local output = io.open("s1built.32x", "wb")
+	output:write(data)
+	output:close()
+end
+
 -- A successful build; we can quit now.
 common.exit()

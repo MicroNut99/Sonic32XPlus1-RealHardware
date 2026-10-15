@@ -25,9 +25,13 @@ CheatsEnabled = 0
 ;	| If 1, all in-game cheats (Level Select, Debug Mode, Slow-Motion, Japanese Credits)
 ;	|       will be enabled by default, without requiring any title screen button inputs
 
+Mars = 1
+;	| If 1, build a Sega 32X ROM (32X header and start-up, SH2 program in mars/sh2);
+;	|       if 0, the original Mega Drive ROM
+
 AllOptimizations = 0
 ;	| If 1, enables all optimizations
-SkipChecksumCheck = 0|AllOptimizations
+SkipChecksumCheck = 0|AllOptimizations|Mars
 ;	| If 1, disables the slow bootup checksum calculation
 ZeroOffsetOptimization = 0|AllOptimizations
 ;	| If 1, makes a handful of zero-offset instructions smaller
@@ -77,6 +81,7 @@ StartOfRom:
 		fatal "StartOfRom was $\{*} but it should be 0"
 	endif
 
+	if Mars=0
 Vectors:
 		dc.l v_systemstack&$FFFFFF			; Initial stack pointer value
 		dc.l EntryPoint					; Start of program
@@ -197,6 +202,10 @@ RomEndLoc:	dc.l EndOfRom-1					; End address of ROM
 		dc.b "JUE             "				; Region (Country code)
 	if * <> $200
 		fatal "Header size was $\{*} but it should be exactly $200"
+	endif
+	else
+		include "mars/header.asm"
+		include "mars/mars68k.asm"
 	endif
 EndOfHeader:
 
@@ -415,6 +424,9 @@ GameInit:
 .clearRAM:	move.l	d7,(a6)+				; clear RAM
 		dbf	d6,.clearRAM				; loop until done
 
+	if Mars=1
+		bsr.w	Mars_Init68k				; set up the 32X screen, hand it to the SH2s
+	endif
 		bsr.w	VDPSetupGame				; initialize (proper) VDP registers
 		bsr.w	DACDriverLoad				; initialize Z80 DAC driver
 		bsr.w	JoypadInit				; initialize controller ports
@@ -656,6 +668,9 @@ id_VBlank_Ending:	equ $18					; Ending Sequence
 ; loc_B10: VBla:
 VBlank:
 		movem.l	d0-a6,-(sp)				; backup all registers except stack pointer (a7)
+	if Mars=1
+		bsr.w	Mars_SendBG				; the backdrop colour for the 32X's colour 0
+	endif
 
 		tst.b	(v_vblank_routine).w			; was a VBlank routine set?
 		beq.s	VBlank_Lag				; if not, this is a lag frame, branch
@@ -1863,11 +1878,13 @@ Sega_WaitPal:		; while light scanning effect is active
 		bne.s	Sega_WaitPal				; loop until it's finished
 ; ---------------------------------------------------------------------------
 
+	if Mars=0	; (32X: no "SEGA" voice until the sound step - the Z80 would read it from the 32X ROM area)
 		; while "SEGA" sound is playing
 		move.b	#sfx_Sega,d0				; set "SEGA" sound
 		bsr.w	QueueSound2				; queue it
 		move.b	#id_VBlank_SegaPCM,(v_vblank_routine).w	; set VBlank routine to $14
 		bsr.w	WaitForVBlank				; wait for VBlank to play the sound (CPU is frozen here until sound finished playing)
+	endif
 ; ---------------------------------------------------------------------------
 
 		; after sound has finished playing
@@ -5233,6 +5250,14 @@ SoundDriver:	include "s1.sounddriver.asm"
 		even
 
 ; ---------------------------------------------------------------------------
+
+	if Mars=1
+; the SH2 program (mars/sh2: make), copied to the SH2s' SDRAM by the 32X boot ROM
+		align 4
+Mars_SH2:	binclude "mars/sh2/sh2.bin"
+Mars_SH2_End:
+		align 4
+	endif
 
 ; end of 'ROM'
 EndOfRom:

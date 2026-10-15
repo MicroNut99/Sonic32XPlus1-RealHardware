@@ -29,3 +29,8 @@ sound/dac/dpcm/generated/hashes.lua
 sound/dac/pcm/generated/*.inc
 sound/dac/pcm/generated/*.pcm
 sound/dac/pcm/generated/hashes.lua
+
+# 32X build outputs
+s1built.32x
+mars/sh2/*.o
+mars/sh2/sh2.elf

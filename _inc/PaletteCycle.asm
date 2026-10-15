@@ -252,7 +252,11 @@ PalCycle_SBZ:
 		subq.b	#1,(a1)					; decrement timer for current script
 		bmi.s	.updateColor				; if timer expired, branch to update colors
 		addq.l	#2,a1					; advance to next stored palette index
+	if Mars=1
+		addq.l	#8,a2					; (32X: the source is a long address)
+	else
 		addq.l	#6,a2					; advance to next palette cycle script
+	endif
 		bra.s	.sbzNext				; execute next palette cycle script
 
 	.updateColor:
@@ -267,7 +271,11 @@ PalCycle_SBZ:
 
 		andi.w	#$F,d0					; limit to 16 colors
 		add.w	d0,d0					; double for word-sized colors
+	if Mars=1
+		movea.l	(a2)+,a0				; get source palette data (32X: ROM is at $900000)
+	else
 		movea.w	(a2)+,a0				; get source palette data
+	endif
 		movea.w	(a2)+,a3				; get target palette index in RAM
 		move.w	(a0,d0.w),(a3)				; write 1 color
 
@@ -338,12 +346,21 @@ Pal_SYZCyc_RedWhite:	binclude	"palette/Cycle - SYZ2.bin"
 
 mSBZh:	macro {INTLABEL}
 __LABEL__:	label	*
+	if Mars=1
+		dc.w ((__LABEL___end-__LABEL__-2)/8)-1
+	else
 		dc.w ((__LABEL___end-__LABEL__-2)/6)-1
+	endif
 		endm
 
 mSBZp:	macro duration,colours,sourceAddress,destinationPalette
 		dc.b (duration-1), colours
+	if Mars=1
+		dc.l sourceAddress
+		dc.w destinationPalette
+	else
 		dc.w sourceAddress, destinationPalette
+	endif
 		endm
 
 ; duration in frames, number of colours, source palette data, target palette index in RAM buffer

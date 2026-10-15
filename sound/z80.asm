@@ -6,6 +6,9 @@
 ;
 
 	save
+	if Mars=1
+	dephase			; (32X: the 68000 code is phased to $900000; the Z80 driver is not)
+	endif
 	!org	0		; z80 Align, handled by the build process
 	CPU Z80
 	listing purecode
@@ -234,4 +237,9 @@ zDAC_Timpani:	include "sound/dac/dpcm/generated/timpani.inc"
 
 	restore
 	padding off
+	if Mars=1
+	!org (DACDriver-$900000+Size_of_DAC_driver_guess)	; (32X: org takes the ROM offset ...
+	phase $900000+*						; ... and the 68000 code continues at $900000 + offset)
+	else
 	!org (DACDriver+Size_of_DAC_driver_guess)
+	endif
