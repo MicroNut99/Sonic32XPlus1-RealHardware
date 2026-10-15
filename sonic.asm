@@ -2234,7 +2234,17 @@ LevelSelect:
 		bsr.w	RunPLC					; run any potential PLC
 		tst.l	(v_plc_buffer).w			; are any patterns in the PLC still left to be loaded?
 		bne.s	LevelSelect				; if yes, block quitting level select until finished
+	if Mars=1
+		btst	#bitB,(v_jpadpress1).w			; 32X: B = back to the title screen
+		beq.s	LevSel_NoB
+		clr.b	(v_mars_menu).w
+		move.b	#id_Title,(v_gamemode).w
+		rts
+LevSel_NoB:
+		andi.b	#btnA+btnC+btnStart,(v_jpadpress1).w	; is A, C, or Start pressed?
+	else
 		andi.b	#btnABC+btnStart,(v_jpadpress1).w	; is A, B, C, or Start pressed?
+	endif
 		beq.s	LevelSelect				; if not, loop level select
 
 LevSel_SelectionMade:

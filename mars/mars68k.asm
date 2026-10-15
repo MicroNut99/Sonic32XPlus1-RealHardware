@@ -84,7 +84,10 @@ Mars_Init68k:
 ; Outside levels and demos also COMM2 = 0 (no Tails).
 ; ---------------------------------------------------------------------------
 Mars_SendBG:
-		tst.b	(v_mars_credits).w			; the credits screen: plasma (code 7), its speed in COMM2
+		tst.b	(CD_Lvl2).w				; the Sega CD's BIOS needs a level 2 interrupt every frame
+		beq.s	.nocd
+		ori.w	#$0100,($A12000).l
+.nocd:		tst.b	(v_mars_credits).w			; the credits screen: plasma (code 7), its speed in COMM2
 		beq.s	.nocredits
 		moveq	#0,d0
 		move.b	(v_mars_speed).w,d0
@@ -185,6 +188,8 @@ mars_comm8:	equ $A15128
 mars_comm10:	equ $A1512A
 ; (Mars_SegaCycleNTSC / Mars_SegaCyclePAL: at the end of sonic.asm, after the sound driver)
 
+		align 4						; (the slave reads it as longs: must be 4-byte aligned -
+							;  build G had it at $FAE: no SEGA voice)
 Mars_SegaTable:
 		dc.l SegaPCM-$900000				; ROM offset of the sample (8-bit unsigned)
 		dc.l SegaPCM.size				; its size in bytes
