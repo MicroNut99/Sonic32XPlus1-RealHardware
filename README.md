@@ -7,6 +7,31 @@ and a hidden **menu** with a **credits screen** (OpenJazz's plasma, Sega CD audi
 
 ---
 
+## Plays on real hardware
+
+Every build was tested on a **real Genesis + 32X** (with a Sega CD underneath), started from a
+**Mega EverDrive** – not only in emulators. The start-up follows what real consoles need (see
+*Start-up* below), so it boots, sounds and draws the same on a real console as in PicoDrive.
+
+## What the 32X enhances
+
+| Enhancement | Original Sonic 1 | With the 32X |
+|---|---|---|
+| **Tails** | not in the game | Tails follows Sonic, **drawn by the 32X** in his own 32X colors |
+| **Skies** | one flat backdrop color | **32X gradient skies** (up to 64 shades from 32,768 colors) in Green Hill, Marble, Star Light, Spring Yard and Scrap Brain, and on the title screen; the Genesis clouds stay in front |
+| **SEGA voice** | Z80 sample | played by the **32X PWM**, pitch matched to the original |
+| **Credits screen** | – | OpenJazz's plasma **drawn by the 32X** behind the scrolling credits |
+
+### The 32X controls Tails
+
+Tails is the 32X's: he uses **no Genesis sprites, no Genesis palette and no VRAM**. The master SH2
+holds all 139 of his Sonic 2 frames in 32X colors and draws him, his tails, his facing and his
+screen clipping into the 32X frame buffer every frame, in front of the Genesis picture. The 68000
+only passes along where he is and which frame to show (COMM registers), so Sonic 1's own graphics
+and sprite limits are untouched.
+
+---
+
 ## What it is
 
 - A **32X cartridge game** (`s1built.32x`). It runs on a Genesis / Mega Drive with a 32X (tested on
