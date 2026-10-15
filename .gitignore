@@ -34,3 +34,4 @@ sound/dac/pcm/generated/hashes.lua
 s1built.32x
 mars/sh2/*.o
 mars/sh2/sh2.elf
+__pycache__/
